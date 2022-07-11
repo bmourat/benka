@@ -21,7 +21,6 @@ func NewProducer(brokers string) sarama.AsyncProducer {
 	config.Producer.Flush.Frequency = time.Duration(100) * time.Millisecond
 	sarama.MaxRequestSize = 999000
 
-	log.Infof("Connecting to %s", brokers)
 	producer, err := sarama.NewAsyncProducer(strings.Split(brokers, ","), config)
 	if err != nil {
 		log.WithError(err).Panic("Unable to start the producer")
@@ -32,14 +31,11 @@ func NewProducer(brokers string) sarama.AsyncProducer {
 // Prepare returns a function that can be used during the benchmark as it only
 // performs the sending of messages, checking that the sending was successful.
 func Prepare(producer sarama.AsyncProducer, topic string, message []byte, numMessages int) func() {
-	log.Infof("Preparing to send message of %d bytes %d times", len(message), numMessages)
-
 	go func() {
-		var nomessages int
+		var msgCount int
 		for range producer.Successes() {
-			nomessages++
-			if nomessages%numMessages == 0 {
-				log.Infof("Sent %d messages... stopping...", nomessages)
+			msgCount++
+			if msgCount >= numMessages {
 				Done <- true
 			}
 		}

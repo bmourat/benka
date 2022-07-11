@@ -19,11 +19,7 @@ func NewProducer(brokers string) *kafka.Producer {
 	return producer
 }
 
-// Prepare returns a function that can be used during the benchmark as it only
-// performs the sending of messages, checking that the sending was successful.
 func Prepare(producer *kafka.Producer, topic string, message []byte, numMessages int) func() {
-	log.Infof("Preparing to send message of %d bytes %d times", len(message), numMessages)
-
 	go func() {
 		var msgCount int
 		for e := range producer.Events() {
@@ -34,7 +30,6 @@ func Prepare(producer *kafka.Producer, topic string, message []byte, numMessages
 				}
 				msgCount++
 				if msgCount >= numMessages {
-					log.Infof("Sent %d messages... stopping...", msgCount)
 					Done <- true
 				}
 			}
